@@ -1,0 +1,91 @@
+#包的加载
+
+```{r}
+# 加载必要的R包
+library(dplyr)
+library(readr)
+library(tidyr)
+library(igraph)
+library(rio)
+library(readxl)
+```
+
+
+
+#Get Pri-Groups
+
+```{r}
+
+# 读取BLAST结果文件
+blast_results <- read_excel("blast_res.xlsx")
+#blast_results <- Copia_blast_results
+# 设定相似性阈值，例如90%
+threshold <- 80.0
+
+# 过滤出相似性大于阈值的比对结果
+filtered_results <- blast_results %>%
+  filter(identity >= threshold)
+
+# 创建分组列表
+groups <- filtered_results %>%
+  group_by(query) %>%
+  summarize(sequences = paste(unique(subject), collapse = ", "))
+
+# 分割 sequences 列到多行
+tidy_data <- groups %>%
+  separate_rows(sequences, sep = ", ")
+
+# 按照 query 列将数据分成不同的列表
+#query_lists <- split(tidy_data, tidy_data$query)
+
+# 创建一个图，以 sequences 为边连接 query
+edges <- tidy_data %>%
+  select(query, sequences) %>%
+  distinct()
+g <- graph_from_data_frame(edges, directed = FALSE)
+
+# 找到所有连接的子图（即新组）
+comps <- components(g)$membership
+
+# 创建新的 query list
+new_query_list <- lapply(unique(comps), function(comp_id) {
+  nodes <- names(which(comps == comp_id))
+  queries <- tidy_data %>%
+    filter(query %in% nodes) %>%
+    select(query) %>%
+    distinct() %>%
+    pull(query)
+  
+  sequences <- tidy_data %>%
+    filter(query %in% nodes) %>%
+    select(sequences) %>%
+    distinct() %>%
+    pull(sequences)
+  
+  list(new_query = paste0("Group_", comp_id), new_sequences = unique(sequences))
+})
+
+# 使用 lapply 提取每个子列表中的元素，并绑定到一个数据框中
+out_df <- bind_rows(lapply(new_query_list, as.data.frame))
+
+export(out_df,"Ale_output_name.xlsx")
+
+
+
+# 打印子图数量
+print(paste("Number of components:", length(unique(comps))))
+
+# 计算每个节点的度数
+degree_data <- edges%>% group_by(query)%>%summarize(degree = n())
+
+export(degree_data,"Ale_output_connect_degree.xlsx")
+
+
+
+
+# 输出分组结果到文件
+#write.table(groups, file = "grouped_sequences.txt", row.names = FALSE, col.names = TRUE, quote = FALSE, sep = "\t")
+
+#print("分组完成，结果保存在 grouped_sequences.txt 中")
+
+```
