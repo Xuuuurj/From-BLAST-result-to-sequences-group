@@ -7,4 +7,16 @@
 这个脚本输出的结果分别有
   *_connect_degree.xlsx(存放着序列和其同组成员产生的blast hits的数量)
   *_name.xlsx（存放着序列间的分组结果）
-  
+
+后续我还希望写一个基于转座子系统发育树来进行转座子分类的工具
+
+#Translated by ChatGPT
+
+I wrote a simple R script to process BLAST results, allowing a group of sequences to be clustered together based on mutual hits after BLAST. This may be useful when working with transposon classification. Although there are many corresponding software tools available for transposon classification, such as blastClust and cd-hit, in practice, the results of these tools often conflict with the results from a direct all-to-all BLAST, and they don't always fully achieve the theoretically expected results based on similarity filtering.
+Therefore, I wrote this script.
+
+The output of this script includes:
+*_connect_degree.xlsx (containing the number of BLAST hits between each sequence and its group members)
+*_name.xlsx (containing the grouping results between sequences)
+
+In the future, I also hope to develop a tool for transposon classification based on transposon phylogenetic trees.
